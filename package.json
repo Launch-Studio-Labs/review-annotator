@@ -1,0 +1,27 @@
+{
+  "name": "review-annotator",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Draw and annotate on any website during site reviews. Chromium MV3 extension.",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . && tsc --noEmit",
+    "test": "npm run build && playwright test",
+    "demo": "node scripts/serve.mjs",
+    "zip": "npm run build && cd dist && zip -qr ../review-annotator.zip ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
+    "@types/chrome": "^0.3.7",
+    "@types/node": "^26.6.6",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.73.0"
+  }
+}

@@ -1,0 +1,258 @@
+/* Everything lives in a shadow root, so page CSS can't reach in and ours can't leak out. */
+:host {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --bar-bg: rgb(28 28 31 / 0.94);
+  --bar-fg: rgb(255 255 255 / 0.66);
+  --bar-fg-strong: #fff;
+  --bar-hover: rgb(255 255 255 / 0.07);
+  --bar-active: rgb(255 255 255 / 0.14);
+  --font: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+/* ---------- Annotation layer (document space) ---------- */
+
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.layer path,
+.layer rect {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.layer .highlighter { stroke-linecap: butt; opacity: 0.38; }
+.layer .doomed { opacity: 0.25; }
+.layer .highlighter.doomed { opacity: 0.12; }
+
+.notes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.note {
+  position: absolute;
+  width: max-content;
+  max-width: 260px;
+  min-width: 24px;
+  padding: 6px 10px 7px;
+  border-radius: 8px;
+  background: var(--note-bg);
+  color: var(--note-fg);
+  font: 500 13px/1.4 var(--font);
+  letter-spacing: -0.003em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.16), 0 4px 12px -2px rgb(0 0 0 / 0.18);
+  outline: none;
+  cursor: inherit;
+  -webkit-font-smoothing: antialiased;
+}
+
+.note.doomed { opacity: 0.35; }
+
+.note[contenteditable] {
+  cursor: text;
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.9), 0 0 0 3.5px var(--note-bg), 0 4px 12px -2px rgb(0 0 0 / 0.2);
+}
+
+.note[contenteditable]:empty::before {
+  content: 'Add a note';
+  opacity: 0.6;
+}
+
+/* ---------- Input capture (only while a drawing tool is selected) ---------- */
+
+.capture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  touch-action: none;
+  z-index: 2;
+}
+
+:host([data-tool='pen']) .capture,
+:host([data-tool='highlighter']) .capture,
+:host([data-tool='arrow']) .capture,
+:host([data-tool='rect']) .capture,
+:host([data-tool='text']) .capture,
+:host([data-tool='eraser']) .capture {
+  pointer-events: auto;
+}
+
+:host([data-tool='arrow']) .capture,
+:host([data-tool='rect']) .capture { cursor: crosshair; }
+:host([data-tool='text']) .capture { cursor: text; }
+:host([data-tool='text']) .note { pointer-events: auto; cursor: text; }
+
+/* ---------- Toolbar ---------- */
+
+.bar {
+  position: fixed;
+  z-index: 4;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--bar-bg);
+  color: var(--bar-fg);
+  font: 500 12px/16px var(--font);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-font-smoothing: antialiased;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.5),
+    inset 0 0 0 0.5px rgb(255 255 255 / 0.1),
+    0 2px 4px rgb(0 0 0 / 0.12),
+    0 12px 28px -8px rgb(0 0 0 / 0.4);
+}
+
+.bar.placed { transform: none; bottom: auto; }
+
+/* Icon click: a short, quiet entrance. Shortcut toggles skip it (see .instant). */
+.bar.enter {
+  animation: bar-in 180ms var(--ease-out);
+}
+
+@keyframes bar-in {
+  from { opacity: 0; translate: 0 6px; scale: 0.98; }
+}
+
+.grip {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 34px;
+  margin-right: 2px;
+  color: rgb(255 255 255 / 0.28);
+  cursor: grab;
+  touch-action: none;
+}
+
+.grip:active,
+.bar.dragging .grip { cursor: grabbing; }
+
+.btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    transform 140ms var(--ease-out),
+    opacity 120ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { background: var(--bar-hover); color: var(--bar-fg-strong); }
+}
+
+.btn:active:not(:disabled) { transform: scale(0.96); }
+
+.btn:focus-visible { box-shadow: 0 0 0 2px rgb(120 150 255 / 0.9); }
+
+.btn[aria-pressed='true'] {
+  background: var(--bar-active);
+  color: var(--bar-fg-strong);
+}
+
+.btn:disabled { opacity: 0.3; cursor: default; }
+
+.btn svg { display: block; }
+
+.sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 5px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.swatch {
+  width: 26px;
+}
+
+.swatch .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+  transition: box-shadow 150ms var(--ease-out), transform 150ms var(--ease-out);
+}
+
+.swatch[aria-checked='true'] .dot {
+  box-shadow: 0 0 0 2px var(--bar-bg), 0 0 0 3.5px rgb(255 255 255 / 0.92);
+}
+
+.swatch[aria-checked='true'] { background: transparent; }
+
+/* ---------- Tooltip ---------- */
+
+.tip {
+  position: fixed;
+  z-index: 5;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgb(18 18 20 / 0.96);
+  color: #fff;
+  font: 500 12px/16px var(--font);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  translate: 0 2px;
+  transition: opacity 120ms var(--ease-out), translate 120ms var(--ease-out);
+  box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.08), 0 4px 12px rgb(0 0 0 / 0.25);
+}
+
+.tip.show { opacity: 1; translate: 0 0; }
+.tip.instant { transition: none; }
+
+.tip kbd {
+  margin-left: 6px;
+  font: inherit;
+  color: rgb(255 255 255 / 0.5);
+}
+
+/* ---------- Reduced motion: keep fades, drop movement ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .bar.enter { animation: bar-fade 150ms ease; }
+  .btn:active:not(:disabled) { transform: none; }
+  .tip { translate: 0 0; transition: opacity 120ms ease; }
+}
+
+@keyframes bar-fade {
+  from { opacity: 0; }
+}
