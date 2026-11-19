@@ -6,13 +6,11 @@ Draw and leave notes on any website during a site review. Your marks stay pinned
 
 ## Install
 
-**Chrome Web Store:** coming soon. Until it's listed, install it from source:
+**[Add to Chrome](https://chromewebstore.google.com/detail/igcjmdghfpkpfphbpbndllonafibgebk)** from the Chrome Web Store (the listing is under review and may not open yet).
 
-1. `npm install && npm run build`
-2. Open `chrome://extensions` and turn on **Developer mode**.
-3. Click **Load unpacked** and choose the `dist/` folder.
+Works in Chrome, Dia, Arc, Edge, Brave and other Chromium browsers.
 
-This works in Chrome, Dia, Arc, Edge, Brave and other Chromium browsers.
+To install from source: `npm install && npm run build`, then load the `dist/` folder unpacked from `chrome://extensions` with Developer mode on.
 
 ## Use
 
