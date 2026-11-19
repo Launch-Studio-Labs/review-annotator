@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "description": "Draw and annotate on any website during site reviews. Chromium MV3 extension.",
+  "license": "MIT",
+  "author": "Launch Studio",
+  "homepage": "https://github.com/Launch-Studio-Labs/review-annotator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Launch-Studio-Labs/review-annotator.git"
+  },
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -11,7 +18,8 @@
     "lint": "eslint . && tsc --noEmit",
     "test": "npm run build && playwright test",
     "demo": "node scripts/serve.mjs",
-    "zip": "npm run build && cd dist && zip -qr ../review-annotator.zip ."
+    "zip": "npm run build && rm -f review-annotator.zip && cd dist && zip -qrX ../review-annotator.zip .",
+    "screenshots": "npm run build && node scripts/screenshots.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
